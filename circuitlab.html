@@ -1,0 +1,271 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>CircuitLab – Simulador de Circuitos</title>
+<style>
+:root{--bg:#0d1117;--p:#161b22;--b:#2a323d;--t:#d5dde6;--a:#2f81f7;color-scheme:dark}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--t);font:13px system-ui,sans-serif;display:grid;grid-template:auto 1fr 150px/176px 1fr 270px;grid-template-areas:"t t t" "l c s" "l o s";padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);overflow:hidden}
+#top{grid-area:t;display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:6px 10px;background:var(--p);border-bottom:1px solid var(--b)}
+.lg{color:#58a6ff;margin-right:6px}.sp{flex:1}
+button,select,input{background:#21262d;color:var(--t);border:1px solid var(--b);border-radius:5px;padding:5px 8px;font:inherit}
+button{cursor:pointer}button:hover{border-color:var(--a)}button.g{background:#1f6f3a;border-color:#2ea043}
+#pn{width:130px}input.bad{border-color:#f85149;background:#3a1519}
+#lib{grid-area:l;overflow:auto;background:var(--p);border-right:1px solid var(--b);padding:8px}
+#lib h4{margin:10px 0 4px;color:#8b98a8;font-size:11px;text-transform:uppercase}.gr{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.it{background:#0d1117;border:1px solid var(--b);border-radius:6px;padding:3px;text-align:center;cursor:grab;font-size:10px}.it:hover{border-color:var(--a)}
+.it svg{width:100%;height:40px;stroke:#9fb3c8;fill:none;stroke-width:2.5}.it text{fill:#9fb3c8;stroke:none;font-size:14px}
+#cv{grid-area:c;position:relative;min-height:0}#svg{width:100%;height:100%;display:block;cursor:default;touch-action:none;user-select:none;-webkit-user-select:none}
+#svg.hand,#svg.hand *{cursor:grab}#svg.grabbing,#svg.grabbing *{cursor:grabbing}
+#side{grid-area:s;overflow:auto;background:var(--p);border-left:1px solid var(--b);padding:10px}
+#side h3{margin:0 0 8px;font-size:14px}#side label{display:block;margin:6px 0;color:#9aa7b5}#side input[type=text],#side label input:not([type]){width:100%;margin-top:2px}
+#side button{margin:6px 4px 0 0}.m{color:#7d8896}
+.ms{padding:5px 7px;margin:4px 0;border-radius:5px;border-left:3px solid}.ms.e{background:#3a1519;border-color:#f85149}.ms.w{background:#392c10;border-color:#d29922}.ms.i{background:#10263d;border-color:#58a6ff}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:11.5px}td,th{padding:3px 4px;border-bottom:1px solid var(--b);text-align:right}th{color:#8b98a8}td:first-child,th:first-child{text-align:left}
+.kv{margin-top:6px;color:#9aa7b5}
+#sc{grid-area:o;border-top:1px solid var(--b);position:relative;background:#0b1118}#scope{width:100%;height:100%;display:block}
+#sc label{position:absolute;right:8px;top:4px;font-size:11px;color:#8b98a8}#win{width:56px;padding:2px 4px}
+.lb{fill:#cfd8e3;font-size:11px;pointer-events:none}.rs{fill:#7ee787;font-size:10.5px;font-family:ui-monospace,monospace;pointer-events:none}
+.sy{stroke:#9fb3c8;fill:none;stroke-width:2.2;stroke-linecap:round}.sy text{fill:#9fb3c8;stroke:none;font-size:14px;text-anchor:middle}.cp.sel .sy{stroke:#ffd54a}.cp.sel .sy text{fill:#ffd54a}
+.pn{fill:#0d1117;stroke:#4aa8ff;stroke-width:1.5;cursor:crosshair}.pn:hover,.pn.on{fill:#ffd54a}.cp{cursor:move}.wr{stroke-linejoin:round}
+.fl>path:first-child,.fr>path:first-child{stroke-dasharray:6 4;animation:d .6s linear infinite}.fr>path:first-child{animation-direction:reverse}@keyframes d{to{stroke-dashoffset:-20}}
+@media(max-width:900px){body{grid-template:auto auto minmax(260px,1fr) 150px auto/1fr;grid-template-areas:"t" "l" "c" "o" "s";overflow:auto}#lib{border:0;display:flex;gap:8px;overflow-x:auto;padding:6px}#lib h4{display:none}.gr{display:flex}.it{min-width:70px}#side{border:0;max-height:300px}}
+</style></head><body>
+<header id="top"><b class="lg">⚡ CircuitLab</b><input id="pn" placeholder="Nome do projeto"><button data-a="new">Novo</button><button data-a="save">Salvar</button><select id="pl"></select><button data-a="dup">Duplicar</button><button data-a="delp">Excluir</button><button data-a="exp">Exportar</button><button data-a="imp">Importar</button><input type="file" id="fi" hidden accept=".json">
+<span class="sp"></span><button data-a="rot" title="Girar (R)">⟳</button><button data-a="del" title="Excluir (Del)">🗑</button><button data-a="zi">＋</button><button data-a="zo">－</button><button data-a="fit">⤢</button><button data-a="ex">Exemplo</button>
+<span class="sp"></span><button data-a="run" class="g">▶ Executar</button><button data-a="pause">⏸ Pausar</button><button data-a="reset">⟲ Reiniciar</button><button data-a="stop">■ Encerrar</button></header>
+<aside id="lib"></aside>
+<main id="cv"><svg id="svg"><defs><pattern id="gr" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="0" cy="0" r="1" fill="#2c3644"/></pattern></defs><g id="world"><rect x="-6000" y="-6000" width="12000" height="12000" fill="url(#gr)"/><g id="items"></g></g></svg></main>
+<aside id="side"><div id="props"></div><div id="res"></div></aside>
+<footer id="sc"><canvas id="scope"></canvas><label>Janela <input id="win" value="60"> ms</label></footer>
+<script>
+const $=s=>document.querySelector(s),G=20,svg=$('#svg');
+const U={p:1e-12,n:1e-9,u:1e-6,'µ':1e-6,m:1e-3,k:1e3,K:1e3,M:1e6,G:1e9};
+const num=s=>{const m=String(s).replace(',','.').match(/^\s*(-?[\d.]+(?:e[-+]?\d+)?)\s*([pnuµmkKMG]?)/);return m?parseFloat(m[1])*(U[m[2]]||1):NaN};
+const fmt=(v,u)=>{if(!isFinite(v))return'—';const a=Math.abs(v);if(a<1e-13)return'0 '+u;for(const[f,p]of[[1e9,'G'],[1e6,'M'],[1e3,'k'],[1,''],[1e-3,'m'],[1e-6,'µ'],[1e-9,'n'],[1e-12,'p']])if(a>=f*.9995)return(+(v/f).toPrecision(3))+' '+p+u;return v.toExponential(1)+' '+u};
+/* Escapa texto antes de inserir em innerHTML (referências/nomes podem vir de arquivos importados) */
+const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+/* Validação de parâmetro (1:>0, 2:0..1, demais: número finito) – usada na edição e na importação */
+const valid=(z,v)=>z==1?v>0:z==2?v>=0&&v<=1:isFinite(v);
+/* ===== Biblioteca de componentes (extensível: basta adicionar uma entrada em D) =====
+ pins: terminais; p: parâmetros; pr: [chave,rótulo,unidade,validação(1:>0, 2:0..1, b:booleano)];
+ e(c,n): devolve elementos do modelo (g: conduta+fonte de corrente f()=>[g,Is]; k:'v' fonte de tensão E(t)); post: após cada passo */
+const T=[[-40,0],[40,0]],ld='<path d="M-40 0H-20M20 0H40"/>',rc='<rect x="-20" y="-7" width="40" height="14"/>',lead2='<path d="M-40 0H-16M16 0H40"/>';
+const glow=(c,col)=>c.lv?`rgba(${col},${.15+.85*c.lv})`:'none';
+const dio=(c,col,ar)=>`<path d="M-40 0H-10M10 0H40M10 -10V10"/><path d="M-10 -10V10L10 0Z" fill="${glow(c,col)}"/>`+(ar?'<path d="M-2 -14l6 -8M4 -10l6 -8"/>':'');
+const dEl=(c,n)=>[{a:n(0),b:n(1),nl:1,f:()=>{const m=D[c.t].d,v=c.vd||0,x=Math.exp(Math.min(v,5)/m.nv),g=m.Is/m.nv*x+1e-12;return[g,g*v-m.Is*(x-1)]}}];
+const gEl=(c,n,g)=>[{a:n(0),b:n(1),f:()=>[g(),0]}];
+const D={
+R:{n:'Resistor',r:'R',pins:T,p:{R:1000},pr:[['R','Resistência','Ω',1]],sym:c=>ld+rc,v:c=>fmt(c.p.R,'Ω'),e:(c,n)=>gEl(c,n,()=>1/c.p.R)},
+POT:{n:'Potenciômetro',r:'RV',pins:[[-40,0],[40,0],[0,-40]],p:{R:10000,pos:.5},pr:[['R','Resistência','Ω',1],['pos','Posição do cursor (0–1)','',2]],sym:c=>ld+rc+'<path d="M0 -40V-12M-4 -19L0 -11L4 -19"/>',v:c=>fmt(c.p.R,'Ω')+' @'+c.p.pos,e:(c,n)=>[{a:n(0),b:n(2),f:()=>[1/(c.p.R*c.p.pos+1e-3),0]},{a:n(2),b:n(1),f:()=>[1/(c.p.R*(1-c.p.pos)+1e-3),0]}]},
+C:{n:'Capacitor',r:'C',pins:T,p:{C:1e-4},pr:[['C','Capacitância','F',1]],sym:c=>'<path d="M-40 0H-5M5 0H40M-5 -12V12M5 -12V12"/>',v:c=>fmt(c.p.C,'F'),e:(c,n)=>[{a:n(0),b:n(1),f:()=>{const g=c.p.C/S.dt;return[g,g*(c.vp||0)]}}],post:c=>{c.vp=c.v}},
+L:{n:'Indutor',r:'L',pins:T,p:{L:.1},pr:[['L','Indutância','H',1]],sym:c=>'<path d="M-40 0H-20a5 5 0 0 1 10 0a5 5 0 0 1 10 0a5 5 0 0 1 10 0a5 5 0 0 1 10 0H40"/>',v:c=>fmt(c.p.L,'H'),e:(c,n)=>[{a:n(0),b:n(1),f:()=>{const g=S.dt/c.p.L;return[g,-(c.ip||0)]}}],post:c=>{c.ip=c.i}},
+VDC:{n:'Fonte DC',r:'V',src:1,pins:T,p:{V:12},pr:[['V','Tensão','V']],sym:c=>lead2+'<circle r="16"/><text x="-8" y="5">+</text><text x="8" y="5">−</text>',v:c=>fmt(c.p.V,'V'),m:c=>fmt(c.v,'V')+' '+fmt(-c.i,'A'),e:(c,n)=>[{k:'v',a:n(0),b:n(1),E:()=>c.p.V}]},
+VAC:{n:'Fonte AC',r:'V',src:1,ac:1,pins:T,p:{A:10,f:60},pr:[['A','Amplitude (pico)','V',1],['f','Frequência','Hz',1]],sym:c=>lead2+'<circle r="16"/><path d="M-9 0q4.5 -9 9 0t9 0"/>',v:c=>fmt(c.p.A,'V')+' '+fmt(c.p.f,'Hz'),m:c=>fmt(c.v,'V')+' '+fmt(-c.i,'A'),e:(c,n)=>[{k:'v',a:n(0),b:n(1),E:t=>c.p.A*Math.sin(2*Math.PI*c.p.f*t)}]},
+GND:{n:'Terra (GND)',r:'GND',pins:[[0,-20]],p:{},pr:[],sym:c=>'<path d="M0 -20V0M-12 0H12M-8 6H8M-4 12H4"/>',e:()=>[]},
+SW:{n:'Interruptor',r:'S',pins:T,p:{closed:1},pr:[['closed','Fechado','','b']],sym:c=>lead2+'<circle cx="-16" r="3"/><circle cx="16" r="3"/>'+(c.p.closed?'<path d="M-16 0H16"/>':'<path d="M-16 0L12 -16"/>'),v:c=>c.p.closed?'fechado':'aberto',e:(c,n)=>gEl(c,n,()=>c.p.closed?1e4:1e-9)},
+FUSE:{n:'Fusível',r:'F',pins:T,p:{I:1},pr:[['I','Corrente de ruptura','A',1]],sym:c=>ld+(c.blown?'<path d="M-20 0L-8 -6M20 0L8 6"/>':'<path d="M-20 0H20"/>')+'<rect x="-20" y="-6" width="40" height="12"/>',v:c=>c.blown?'queimado':fmt(c.p.I,'A'),e:(c,n)=>gEl(c,n,()=>c.blown?1e-9:20),post:c=>{if(Math.abs(c.i)>c.p.I)c.blown=1}},
+LED:{n:'LED',r:'D',pins:T,d:{Is:1e-18,nv:.0517},p:{},pr:[],sym:c=>dio(c,'255,60,60',1),e:dEl,post:c=>{c.lv=Math.min(1,Math.max(0,c.i)/.02)}},
+DIO:{n:'Diodo',r:'D',pins:T,d:{Is:1e-14,nv:.02585},p:{},pr:[],sym:c=>dio(c,'0,0,0',0),e:dEl},
+LAMP:{n:'Lâmpada',r:'E',pins:T,p:{V:12,P:5},pr:[['V','Tensão nominal','V',1],['P','Potência nominal','W',1]],sym:c=>ld+`<circle r="14" fill="${glow(c,'255,210,60')}"/><path d="M-10 -10L10 10M10 -10L-10 10"/>`,v:c=>fmt(c.p.V,'V')+' '+fmt(c.p.P,'W'),e:(c,n)=>gEl(c,n,()=>c.p.P/(c.p.V*c.p.V)),post:c=>{c.lv=Math.min(1,Math.abs(c.v*c.i)/c.p.P)}},
+AM:{n:'Amperímetro',r:'A',pins:T,p:{},pr:[],sym:c=>lead2+'<circle r="16"/><text y="5">A</text>',m:c=>fmt(c.i,'A'),e:(c,n)=>gEl(c,n,()=>1e5)},
+VM:{n:'Voltímetro',r:'VM',pins:T,p:{},pr:[],sym:c=>lead2+'<circle r="16"/><text y="5">V</text>',m:c=>fmt(c.v,'V'),e:(c,n)=>gEl(c,n,()=>1e-9)},
+OSC:{n:'Osciloscópio',r:'OSC',pins:T,p:{},pr:[],sym:c=>lead2+'<rect x="-16" y="-14" width="32" height="28"/><path d="M-10 0q3 -9 5 0t5 0t5 0"/>',m:c=>fmt(c.v,'V'),e:(c,n)=>gEl(c,n,()=>1e-9),post:c=>{(c.h=c.h||[]).push([S.t,c.v]);if(c.h.length>20000)c.h.splice(0,5000)}}
+};
+/* ===== Estado ===== */
+const C=[],W=[],S={on:0,run:0,t:0,dt:1e-4,msg:[],dm:[],vmax:0,vk:1,stale:0,sig:''};
+/* SEL: seleção atual – ids de componentes e objetos de fio (uma única estrutura para seleção simples e múltipla) */
+let EL=[],nid=1,SEL={c:new Set(),w:new Set()},wip=null,drag=null,pan=null,mq=null,shift=false,topo=1,dr=1,mouse=[0,0],view={x:60,y:40,k:1.2},pname='Meu circuito';
+const byId=id=>C.find(c=>c.id==id),snap=v=>Math.round(v/G)*G,rot=(x,y,r)=>[[x,y],[-y,x],[-x,-y],[y,-x]][r];
+const pw=k=>{const[id,i]=k.split(':'),c=byId(id),[x,y]=rot(...D[c.t].pins[i],c.r);return[c.x+x,c.y+y]};
+const selN=()=>SEL.c.size+SEL.w.size,one=()=>SEL.c.size==1&&!SEL.w.size?byId([...SEL.c][0]):null;
+function select(cs=[],ws=[]){SEL={c:new Set(cs),w:new Set(ws)};props()}
+function add(t,x,y,r=0,p={}){const d=D[t],n=1+Math.max(0,...C.filter(c=>D[c.t].r==d.r).map(c=>+c.ref.slice(d.r.length)||0)),c={id:'c'+nid++,t,x,y,r,ref:d.r+(t=='GND'?'':n),p:{...d.p,...p}};C.push(c);topo=1;return c}
+/* ===== Motor de simulação: Análise Nodal Modificada (MNA) =====
+ Lei de Ohm por condutância g=1/R; KCL em cada nó; KVL via fontes de tensão (linhas extras); R/L/C por modelo companheiro (Euler implícito); diodos por Newton-Raphson. */
+function compile(){
+ S.msg=[];S.err=0;const par={},f=k=>par[k]===undefined?k:(par[k]=f(par[k])),un=(a,b)=>{a=f(a);b=f(b);if(a!==b)par[a]=b},used=new Set();
+ W.forEach(w=>{un(w.a,w.b);used.add(w.a);used.add(w.b)});
+ const gnds=C.filter(c=>c.t=='GND'),g0=gnds[0];
+ gnds.slice(1).forEach(g=>un(g.id+':0',g0.id+':0')); /* todos os símbolos GND formam o mesmo nó de referência */
+ const srcs=C.filter(c=>D[c.t].src);let gr=g0?g0.id+':0':null;
+ if(!srcs.length)S.msg.push(['e','Nenhuma fonte de tensão no circuito.']);
+ if(!gr&&srcs.length){gr=srcs[0].id+':1';S.msg.push(['i','Sem GND: terminal − da primeira fonte usado como referência.'])}
+ const map={},root=gr&&f(gr);let N=0;
+ C.forEach(c=>D[c.t].pins.forEach((_,i)=>{const k=f(c.id+':'+i);if(map[k]===undefined)map[k]=k===root?0:++N}));
+ const nd=(c,i)=>map[f(c.id+':'+i)];EL=[];let M=0;
+ C.forEach(c=>{const d=D[c.t];c.nn=d.pins.map((_,i)=>nd(c,i));const es=d.e(c,i=>nd(c,i));c.el=es[0];c.els=es;es.forEach(e=>{e.c=c;if(e.k=='v')e.j=M++;EL.push(e)});
+  d.pins.forEach((_,i)=>{if(!(c.t=='POT'&&i==2)&&!used.has(c.id+':'+i))S.msg.push(['w',`${c.ref}: terminal ${i+1} sem conexão.`])});
+  if(d.pins.length==2&&c.nn[0]==c.nn[1])S.msg.push([d.src?'e':'i',d.src?`${c.ref}: fonte em curto-circuito.`:`${c.ref}: terminais no mesmo nó (em curto).`])});
+ const fs=C.filter(c=>c.t=='VAC').map(c=>c.p.f),dt=Math.min(1e-4,...fs.map(f=>1/(200*f))),
+  tau=Math.max(.2,3/Math.min(...fs,Infinity)); /* constante de tempo (s simulados) do decaimento do pico de tensão usado na escala de cores */
+ Object.assign(S,{N,M,map,f,dt,vk:Math.exp(-dt/tau)});
+ /* se a numeração dos nós mudou durante a simulação, os valores de S.V deixam de corresponder aos nós atuais */
+ const sig=N+'|'+M+'|'+JSON.stringify(map);if(S.on&&sig!==S.sig)S.stale=1;S.sig=sig;
+}
+function solve(A,n){for(let i=0;i<n;i++){let p=i;for(let r=i+1;r<n;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;if(Math.abs(A[p][i])<1e-15)return null;[A[i],A[p]]=[A[p],A[i]];for(let r=i+1;r<n;r++){const m=A[r][i]/A[i][i];if(m)for(let c=i;c<=n;c++)A[r][c]-=m*A[i][c]}}
+ const x=new Array(n);for(let i=n-1;i>=0;i--){let s=A[i][n];for(let c=i+1;c<n;c++)s-=A[i][c]*x[c];x[i]=s/A[i][i]}return x}
+function step(){
+ const n=S.N+S.M,t=S.t+S.dt,nl=EL.some(e=>e.nl);let x,V;
+ for(let it=0;it<80;it++){
+  const A=Array.from({length:n},()=>new Float64Array(n+1)),ad=(r,c,v)=>{if(r&&c)A[r-1][c-1]+=v},zz=(r,v)=>{if(r)A[r-1][n]+=v};
+  for(let i=1;i<=S.N;i++)ad(i,i,1e-12);
+  for(const e of EL){
+   if(e.k=='v'){const j=S.N+1+e.j;ad(e.a,j,1);ad(e.b,j,-1);ad(j,e.a,1);ad(j,e.b,-1);A[j-1][n]+=e.E(t)}
+   else{const[g,s]=e.f();e.g_=g;e.s_=s;ad(e.a,e.a,g);ad(e.b,e.b,g);ad(e.a,e.b,-g);ad(e.b,e.a,-g);zz(e.a,s);zz(e.b,-s)}}
+  x=solve(A,n);if(!x){const tx='Sistema sem solução única: laço de fontes de tensão ou curto-circuito.';if(!S.msg.some(m=>m[1]==tx))S.msg.push(['e',tx]);return false}
+  V=[0,...x.slice(0,S.N)];if(!nl)break;let ok=true;
+  for(const e of EL)if(e.nl){const v=V[e.a]-V[e.b],c=e.c,o=c.vd||0,w=Math.max(o-.5,Math.min(o+.2,v));if(Math.abs(w-o)>1e-7)ok=false;c.vd=w}
+  if(ok)break}
+ S.V=V;S.t=t;S.stale=0;
+ /* pico de |V| com decaimento lento: base da escala de cores dos fios */
+ let pk=0;for(const v of V)pk=Math.max(pk,Math.abs(v));if(isFinite(pk))S.vmax=Math.max(pk,S.vmax*S.vk);
+ for(const e of EL)e.i=e.k=='v'?x[S.N+e.j]:e.g_*(V[e.a]-V[e.b])-e.s_;
+ for(const c of C){c.v=V[c.nn[0]]-V[c.nn[c.nn.length>1?1:0]];c.i=c.el?c.el.i:0;c.pw=c.els?c.els.reduce((s,e)=>s+(V[e.a]-V[e.b])*e.i,0):0;D[c.t].post&&D[c.t].post(c)}
+ return true}
+function analyze(){
+ const m=[],srcs=C.filter(c=>D[c.t].src),ac=C.some(c=>D[c.t].ac);
+ if(S.V.some(v=>!isFinite(v)))m.push(['e','Resultado numérico inválido.']);
+ srcs.forEach(c=>{if(Math.abs(c.i)>1e3)m.push(['e',`Curto-circuito: ${c.ref} fornece ${fmt(-c.i,'A')}.`])});
+ C.filter(c=>c.blown).forEach(c=>m.push(['w',`Fusível ${c.ref} queimou (corrente > ${fmt(c.p.I,'A')}).`]));
+ if(srcs.length&&!ac&&srcs.every(c=>Math.abs(c.i)<1e-9))m.push(['w','Circuito aberto: nenhuma corrente circula.']);
+ const r=new Array(S.N+1).fill(0);EL.forEach(e=>{r[e.a]+=e.i;r[e.b]-=e.i});S.kcl=Math.max(0,...r.slice(1).map(Math.abs));
+ S.req=srcs.length==1&&!ac&&Math.abs(srcs[0].i)>1e-9?Math.abs(srcs[0].v/srcs[0].i):null;S.dm=m}
+/* ===== Controle ===== */
+const clr=()=>C.forEach(c=>{delete c.i;delete c.v;delete c.pw;delete c.lv;delete c.h;c.blown=0});
+function reset(){S.t=0;S.vmax=0;C.forEach(c=>{c.vp=c.ip=c.vd=0;c.blown=0;c.h=[];delete c.lv});topo=1}
+function run(){if(!S.on){S.on=1;reset();compile();topo=0}S.err=0;S.run=1}
+function stop(){S.on=S.run=0;S.V=null;S.dm=[];S.vmax=0;S.stale=0;clr();topo=1}
+/* ===== Escala de cores dos fios (apenas durante a simulação) =====
+ |V|/Vmax → 0: vermelho muito escuro · 0,25: vermelho · 0,5: laranja · 0,75: amarelo · 1: amarelo quase branco (interpolação linear em RGB, contínua) */
+const HEAT=[[0,[40,0,0]],[.25,[200,16,8]],[.5,[255,120,0]],[.75,[255,214,10]],[1,[255,255,230]]];
+function heat(t){t=Math.max(0,Math.min(1,t));let i=1;while(i<HEAT.length-1&&t>HEAT[i][0])i++;const[a,ca]=HEAT[i-1],[b,cb]=HEAT[i],k=(t-a)/(b-a);return`rgb(${ca.map((v,j)=>Math.round(v+(cb[j]-v)*k)).join(',')})`}
+/* ===== Geometria e seleção por área ===== */
+function cbox(c){const d=D[c.t];let x0=-16,y0=-16,x1=16,y1=16;d.pins.forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)});
+ const q=[[x0,y0],[x1,y0],[x0,y1],[x1,y1]].map(([x,y])=>rot(x,y,c.r)),xs=q.map(p=>c.x+p[0]),ys=q.map(p=>c.y+p[1]);return[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)]}
+function boxSel(r){ /* r=[x0,y0,x1,y1] normalizado, em coordenadas do mundo; seleciona o que estiver inteiramente dentro */
+ const ins=(x,y)=>x>=r[0]&&x<=r[2]&&y>=r[1]&&y<=r[3];
+ SEL={c:new Set(C.filter(c=>{const b=cbox(c);return ins(b[0],b[1])&&ins(b[2],b[3])}).map(c=>c.id)),
+  w:new Set(W.filter(w=>{const a=pw(w.a),b=pw(w.b);return ins(a[0],a[1])&&ins(b[0],b[1])&&ins(b[0],a[1])}))}}
+/* ===== Desenho ===== */
+function draw(){
+ const V=S.on&&S.V&&!S.stale?S.V:null,sc=V?Math.max(S.vmax||0,...V.map(Math.abs)):0;
+ let h=W.map((w,i)=>{const a=pw(w.a),b=pw(w.b),s=SEL.w.has(w),v=V?V[S.map[S.f(w.a)]]:NaN,
+  col=isFinite(v)?heat(sc>1e-9?Math.abs(v)/sc:0):'#4aa8ff';
+  const d=`M${a}L${b[0]},${a[1]}L${b}`;
+  return(s&&V?`<path d="${d}" stroke="#58a6ff" stroke-opacity=".55" stroke-width="8" stroke-linejoin="round" fill="none"/>`:'')+
+  `<path class="wr" d="${d}" stroke="${s&&!V?'#ffd54a':col}" stroke-width="${s?3.5:2.5}" fill="none"/><path d="${d}" data-w="${i}" stroke="transparent" stroke-width="12" fill="none"/>`}).join('');
+ h+=C.map(c=>{const d=D[c.t],live=S.on&&c.i!==undefined&&isFinite(c.v),fl=live&&Math.abs(c.i)>1e-9?(c.i>0?'fl':'fr'):'',o=c.r%2,
+  t1=esc((c.ref+' '+(d.v?d.v(c):'')).trim()),t2=live?(d.m||(c=>fmt(c.v,'V')+' '+fmt(c.i,'A')))(c):'';
+  return`<g class="cp ${SEL.c.has(c.id)?'sel':''}" data-c="${c.id}" transform="translate(${c.x} ${c.y}) rotate(${c.r*90})"><rect x="-30" y="-22" width="60" height="44" fill="transparent" stroke="none"/><g class="sy ${fl}">${d.sym(c)}</g>${d.pins.map(([x,y],i)=>`<circle class="pn ${wip==c.id+':'+i?'on':''}" cx="${x}" cy="${y}" r="4.5" data-pin="${c.id}:${i}"/>`).join('')}</g>`+
+  `<text class="lb" x="${o?c.x+16:c.x}" y="${o?c.y-2:c.y-16}" text-anchor="${o?'start':'middle'}">${t1}</text><text class="rs" x="${o?c.x+16:c.x}" y="${o?c.y+12:c.y+30}" text-anchor="${o?'start':'middle'}">${t2}</text>`}).join('');
+ if(wip)h+=`<path d="M${pw(wip)}L${mouse}" stroke="#ffd54a" stroke-dasharray="4" fill="none"/>`;
+ if(mq&&mq.on)h+=`<rect x="${Math.min(mq.x0,mq.x1)}" y="${Math.min(mq.y0,mq.y1)}" width="${Math.abs(mq.x1-mq.x0)}" height="${Math.abs(mq.y1-mq.y0)}" fill="rgba(47,129,247,.14)" stroke="#2f81f7" stroke-width="1" stroke-dasharray="5 3" vector-effect="non-scaling-stroke" pointer-events="none"/>`;
+ $('#items').innerHTML=h;$('#world').setAttribute('transform',`translate(${view.x} ${view.y}) scale(${view.k})`)}
+function res(){
+ let h='<h3 style="margin-top:14px">Simulação</h3>';const m=[...S.msg,...S.dm];
+ h+=m.map(([l,t])=>`<div class="ms ${l}">${esc(t)}</div>`).join('')||(S.on?'<div class="ms i">Circuito válido.</div>':'');
+ if(!S.on)h+='<div class="ms i">Pressione ▶ Executar para simular.</div>';
+ else if(S.V){h+=`<div class="kv">t = ${fmt(S.t,'s')} · Δt = ${fmt(S.dt,'s')}${S.req?` · Req = ${fmt(S.req,'Ω')}`:''}<br>Resíduo KCL máx.: ${fmt(S.kcl,'A')}</div><table><tr><th></th><th>V</th><th>I</th><th>P</th></tr>`+
+  C.filter(c=>c.t!='GND'&&c.i!==undefined).map(c=>`<tr><td>${esc(c.ref)}</td><td>${fmt(c.v,'V')}</td><td>${fmt(c.i,'A')}</td><td>${fmt(c.pw,'W')}</td></tr>`).join('')+'</table><p class="m">P &gt; 0 consome, P &lt; 0 fornece. I positiva do terminal 1 ao 2.</p>'}
+ $('#res').innerHTML=h}
+function props(){
+ const p=$('#props'),n=selN(),c=one();
+ if(!n){p.innerHTML='<h3>Propriedades</h3><p class="m">Arraste componentes da biblioteca. Clique em um terminal e depois em outro para criar um fio. Duplo clique em um interruptor o aciona. Arraste sobre uma área vazia para selecionar vários elementos. Shift + arrastar (ou botão do meio) move a tela. Roda do mouse: zoom.</p>';return}
+ if(c){const d=D[c.t];
+  p.innerHTML=`<h3>${d.n} ${esc(c.ref)}</h3>`+d.pr.map(([k,l,u,z])=>z=='b'?`<label><input type="checkbox" data-k="${k}" ${c.p[k]?'checked':''}> ${l}</label>`:`<label>${l}${u?' ('+u+')':''}<input data-k="${k}" value="${c.p[k]}"></label>`).join('')+'<button data-a="rot">⟳ Girar</button><button data-a="del">Excluir</button>';return}
+ if(!SEL.c.size){p.innerHTML='<h3>Fio</h3><button data-a="del">Excluir fio</button>';return}
+ const nc=SEL.c.size,nw=SEL.w.size;
+ p.innerHTML=`<h3>${n} elementos selecionados</h3><p class="m">${nc} componente${nc==1?'':'s'} e ${nw} fio${nw==1?'':'s'}. Arraste um componente selecionado para mover o grupo.</p><button data-a="rot">⟳ Girar grupo</button><button data-a="del">Excluir seleção</button>`}
+$('#props').addEventListener('change',e=>{const k=e.target.dataset.k,c=one();if(!k||!c)return;const z=D[c.t].pr.find(q=>q[0]==k)[3];
+ if(e.target.type=='checkbox')c.p[k]=e.target.checked?1:0;
+ else{const v=num(e.target.value);if(!valid(z,v)){e.target.classList.add('bad');return}e.target.classList.remove('bad');c.p[k]=v}topo=1});
+function scopeDraw(){
+ const cv=$('#scope'),w=cv.clientWidth,hh=cv.clientHeight,d=devicePixelRatio||1;if(!w)return;if(cv.width!=w*d||cv.height!=hh*d){cv.width=w*d;cv.height=hh*d}
+ const g=cv.getContext('2d');g.setTransform(d,0,0,d,0,0);g.fillStyle='#0b1118';g.fillRect(0,0,w,hh);g.strokeStyle='#1d2a38';g.lineWidth=1;g.font='12px sans-serif';
+ for(let i=1;i<10;i++){g.beginPath();g.moveTo(w*i/10,0);g.lineTo(w*i/10,hh);g.stroke()}for(let i=1;i<6;i++){g.beginPath();g.moveTo(0,hh*i/6);g.lineTo(w,hh*i/6);g.stroke()}
+ const os=C.filter(c=>c.t=='OSC'&&c.h&&c.h.length),win=(num($('#win').value)||60)/1e3;
+ if(!os.length){g.fillStyle='#5b6b7c';g.fillText('Osciloscópio: adicione um OSC em paralelo ao ponto de medição e execute a simulação.',10,20);return}
+ let m=1e-9;os.forEach(c=>c.h.forEach(p=>{if(p[0]>S.t-win)m=Math.max(m,Math.abs(p[1]))}));
+ os.forEach((c,k)=>{g.strokeStyle=g.fillStyle=['#ffd54a','#4fc3f7','#7ee787','#ff7b72'][k%4];g.beginPath();let f=1;
+  c.h.forEach(p=>{if(p[0]<S.t-win)return;const x=(p[0]-(S.t-win))/win*w,y=hh/2-p[1]/m*hh*.42;f?g.moveTo(x,y):g.lineTo(x,y);f=0});g.stroke();g.fillText(`${c.ref}: ±${fmt(m,'V')}`,10,16+k*14)})}
+function frame(){
+ requestAnimationFrame(frame); /* agendado antes: um erro pontual não congela mais a aplicação */
+ try{
+  if(topo){compile();topo=0}
+  if(S.run&&!S.err){for(let i=0;i<40;i++)if(!step()){S.err=1;S.run=0;break}if(S.V)analyze()}
+  if(S.run||dr){dr=0;draw();res();scopeDraw()}
+ }catch(err){console.error(err);S.run=0;S.err=1;S.msg=S.msg.filter(m=>!m[1].startsWith('Erro interno'));S.msg.push(['e','Erro interno: '+err.message]);try{res()}catch(x){}}}
+/* ===== Interação ===== */
+const wpos=e=>{const r=svg.getBoundingClientRect();return[(e.clientX-r.left-view.x)/view.k,(e.clientY-r.top-view.y)/view.k]};
+/* encerra qualquer ação de arraste em andamento (mover, mover tela, seleção por área) */
+function endAct(){
+ if(mq){const on=mq.on;mq=null;if(on)props()}
+ if(drag){const d=drag;drag=null;if(d.solo&&!d.moved)select([d.o.id])} /* clique simples em item de um grupo: fica só ele */
+ pan=null;svg.classList.remove('grabbing');if(!shift)svg.classList.remove('hand')}
+svg.onmousedown=e=>{
+ if(e.button>1)return; /* botão direito mantém o menu de contexto */
+ const a=document.activeElement;if(a&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))a.blur(); /* confirma valor digitado antes de trocar a seleção */
+ e.preventDefault();
+ const m=wpos(e);mouse=m;
+ /* Shift (ou botão do meio) = mover a tela; o modo é fixado no mousedown e vale até soltar o botão */
+ if(e.shiftKey||e.button==1){pan={x:e.clientX,y:e.clientY,tx:view.x,ty:view.y};svg.classList.add('grabbing');return}
+ const p=e.target.closest('[data-pin]'),c=e.target.closest('[data-c]'),w=e.target.closest('[data-w]');
+ if(p){const k=p.dataset.pin;if(!wip)wip=k;else{if(wip!=k&&!W.some(x=>(x.a==wip&&x.b==k)||(x.a==k&&x.b==wip)))W.push({a:wip,b:k});wip=null;topo=1}return}
+ if(c){const o=byId(c.dataset.c),keep=SEL.c.has(o.id)&&selN()>1;
+  if(!keep)select([o.id]);
+  if(e.detail==2&&o.t=='SW'){o.p.closed=o.p.closed?0:1;topo=1;props()} /* duplo clique: aciona o interruptor (detectado no mousedown, pois a tela é redesenhada a cada quadro) */
+  drag={o,dx:m[0]-o.x,dy:m[1]-o.y,ox:o.x,oy:o.y,st:[...SEL.c].map(byId).filter(Boolean).map(q=>[q,q.x,q.y]),moved:false,solo:keep}}
+ else if(w)select([],[W[+w.dataset.w]]);
+ else{wip=null;select();mq={x0:m[0],y0:m[1],x1:m[0],y1:m[1],cx:e.clientX,cy:e.clientY,on:false}}}
+addEventListener('mousemove',e=>{mouse=wpos(e);
+ if(drag){const nx=snap(mouse[0]-drag.dx),ny=snap(mouse[1]-drag.dy),ddx=nx-drag.ox,ddy=ny-drag.oy;if(ddx||ddy)drag.moved=true;drag.st.forEach(([q,x,y])=>{q.x=x+ddx;q.y=y+ddy})}
+ if(pan){view.x=pan.tx+e.clientX-pan.x;view.y=pan.ty+e.clientY-pan.y}
+ if(mq){mq.x1=mouse[0];mq.y1=mouse[1];if(!mq.on&&Math.hypot(e.clientX-mq.cx,e.clientY-mq.cy)>3)mq.on=true;
+  if(mq.on)boxSel([Math.min(mq.x0,mq.x1),Math.min(mq.y0,mq.y1),Math.max(mq.x0,mq.x1),Math.max(mq.y0,mq.y1)])}});
+addEventListener('mouseup',endAct);
+addEventListener('blur',()=>{shift=false;endAct()});
+svg.addEventListener('wheel',e=>{e.preventDefault();const r=svg.getBoundingClientRect(),k=Math.min(4,Math.max(.25,view.k*(e.deltaY<0?1.12:1/1.12))),mx=e.clientX-r.left,my=e.clientY-r.top;view.x=mx-(mx-view.x)*k/view.k;view.y=my-(my-view.y)*k/view.k;view.k=k},{passive:false});
+svg.ondragover=e=>e.preventDefault();
+svg.ondrop=e=>{e.preventDefault();const t=e.dataTransfer.getData('t'),m=wpos(e);if(D[t]){const c=add(t,snap(m[0]),snap(m[1]));select([c.id])}};
+$('#lib').innerHTML=[['Passivos','R POT C L'],['Fontes','VDC VAC GND'],['Controle','SW FUSE'],['Cargas','LED DIO LAMP'],['Medição','AM VM OSC']].map(([g,l])=>`<h4>${g}</h4><div class="gr">`+l.split(' ').map(t=>`<div class="it" draggable="true" data-t="${t}" title="${D[t].n}"><svg viewBox="-44 -26 88 52">${D[t].sym({p:D[t].p,r:0})}</svg>${D[t].n}</div>`).join('')+'</div>').join('');
+$('#lib').ondragstart=e=>e.dataTransfer.setData('t',e.target.closest('.it').dataset.t);
+$('#lib').onclick=e=>{const i=e.target.closest('.it');if(i){const r=svg.getBoundingClientRect(),o=G*(C.length%6),c=add(i.dataset.t,snap((r.width/2-view.x)/view.k)+o,snap((r.height/2-view.y)/view.k)+o);select([c.id])}};
+function delSel(){if(!selN())return;const ids=SEL.c,ws=SEL.w;
+ for(let i=W.length-1;i>=0;i--){const w=W[i];if(ws.has(w)||ids.has(w.a.split(':')[0])||ids.has(w.b.split(':')[0]))W.splice(i,1)}
+ for(let i=C.length-1;i>=0;i--)if(ids.has(C[i].id))C.splice(i,1);
+ wip=null;topo=1;select()}
+function rotSel(){const cs=[...SEL.c].map(byId).filter(Boolean);if(!cs.length)return;
+ if(cs.length>1){ /* grupo: gira 90° em torno do centro do conjunto (alinhado à grade) */
+  const bs=cs.map(cbox),cx=snap((Math.min(...bs.map(b=>b[0]))+Math.max(...bs.map(b=>b[2])))/2),cy=snap((Math.min(...bs.map(b=>b[1]))+Math.max(...bs.map(b=>b[3])))/2);
+  cs.forEach(c=>{const x=c.x-cx,y=c.y-cy;c.x=cx-y;c.y=cy+x})}
+ cs.forEach(c=>c.r=(c.r+1)%4);topo=1}
+addEventListener('keydown',e=>{
+ if(e.key=='Shift'){shift=true;if(!mq&&!drag)svg.classList.add('hand')}
+ if(/INPUT|SELECT/.test(e.target.tagName))return;const k=e.key;
+ if(k=='Delete'||k=='Backspace')delSel();else if((k=='r'||k=='R')&&!e.ctrlKey&&!e.metaKey)rotSel();else if(k=='Escape'){wip=null;mq=null;select()}});
+addEventListener('keyup',e=>{if(e.key=='Shift'){shift=false;if(!pan)svg.classList.remove('hand')}});
+/* ===== Projetos ===== */
+const SKIP=['i','v','vp','ip','vd','h','lv','el','els','nn','blown','pw'],ser=()=>JSON.stringify({ver:1,name:pname,comps:C,wires:W,nid},(k,v)=>SKIP.includes(k)?undefined:v);
+const pj=()=>{try{return JSON.parse(localStorage.cl||'{}')}catch(e){return{}}},sv=o=>{try{localStorage.cl=JSON.stringify(o)}catch(e){}};
+function plist(){$('#pl').innerHTML='<option value="">Abrir…</option>'+Object.keys(pj()).map(n=>`<option>${esc(n)}</option>`).join('')}
+function load(s){
+ const bad=()=>alert('Arquivo de projeto inválido.'),has=t=>Object.prototype.hasOwnProperty.call(D,t);
+ if(!s||!Array.isArray(s.comps)||!Array.isArray(s.wires)||s.comps.some(c=>!c||!has(c.t))){bad();return}
+ /* normaliza os componentes: parâmetros inválidos/ausentes voltam ao padrão, evitando falhas na simulação */
+ const comps=s.comps.map(c=>{const d=D[c.t],p={...d.p};d.pr.forEach(([k,,,z])=>{const v=c.p?Number(c.p[k]):NaN;if(z=='b'?(v===0||v===1):valid(z,v))p[k]=v});
+  return{id:String(c.id),t:c.t,x:+c.x||0,y:+c.y||0,r:((+c.r||0)%4+4)%4,ref:String(c.ref||d.r),p}});
+ if(comps.some(c=>!c.id||c.id.includes(':'))||new Set(comps.map(c=>c.id)).size!=comps.length){bad();return}
+ const pinOk=k=>{const[id,i]=String(k).split(':'),c=comps.find(q=>q.id==id);return!!c&&/^\d+$/.test(i)&&D[c.t].pins[+i]!==undefined};
+ stop();C.length=W.length=0;C.push(...comps);
+ W.push(...s.wires.filter(w=>w&&pinOk(w.a)&&pinOk(w.b)&&String(w.a)!=String(w.b)).map(w=>({a:String(w.a),b:String(w.b)})));
+ nid=Math.max(+s.nid||0,...comps.map(c=>+c.id.replace(/\D/g,'')||0))+1;pname=s.name||'Projeto';$('#pn').value=pname;wip=null;topo=1;select()}
+function ex(){load({comps:[],wires:[],name:'Divisor de tensão'});const a=add('VDC',100,160,1,{V:12}),b=add('SW',160,120),c=add('AM',260,120),d=add('R',360,120,0,{R:1000}),e=add('R',400,160,1,{R:2000}),f=add('VM',480,160,1),g=add('GND',100,220),
+ w=(x,i,y,j)=>W.push({a:x.id+':'+i,b:y.id+':'+j});w(a,0,b,0);w(b,1,c,0);w(c,1,d,0);w(d,1,e,0);w(e,1,a,1);w(f,0,e,0);w(f,1,e,1);w(g,0,a,1)}
+const A={new:()=>load({comps:[],wires:[],name:'Novo projeto'}),save:()=>{const p=pj();p[pname]=JSON.parse(ser());sv(p);plist();$('#pl').value=pname},
+ dup:()=>{pname+=' (cópia)';$('#pn').value=pname;A.save()},delp:()=>{const p=pj();delete p[pname];sv(p);plist()},
+ exp:()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ser()],{type:'application/json'}));a.download=(pname.replace(/[^\p{L}\p{N}_-]+/gu,'_')||'projeto')+'.circuito.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)},
+ imp:()=>$('#fi').click(),rot:rotSel,del:delSel,zi:()=>view.k=Math.min(4,view.k*1.2),zo:()=>view.k=Math.max(.25,view.k/1.2),fit:()=>view={x:60,y:40,k:1.2},ex,run,pause:()=>S.run=0,reset:()=>reset(),stop};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b)A[b.dataset.a]()});
+$('#fi').onchange=e=>{const r=new FileReader();r.onload=()=>{try{load(JSON.parse(r.result))}catch(x){alert('Não foi possível ler o arquivo.')}};e.target.files[0]&&r.readAsText(e.target.files[0]);e.target.value=''};
+$('#pl').onchange=e=>{const s=pj()[e.target.value];if(s)load(s)};$('#pn').oninput=e=>pname=e.target.value;
+['mousedown','mousemove','mouseup','keydown','change','click','wheel','drop','input'].forEach(n=>addEventListener(n,()=>dr=1,true));
+plist();ex();props();frame();
+</script></body></html>
